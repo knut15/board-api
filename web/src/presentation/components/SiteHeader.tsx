@@ -2,11 +2,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMe, useLogout } from "../hooks/useAuth";
+import { useViewer, useLogout } from "../hooks/useAuth";
 import { useLoginHref } from "../hooks/useLoginHref";
 
 export function SiteHeader() {
-  const { data: me } = useMe();
+  // useMe 가 아니라 useViewer 다. useMe 는 쿼리 캐시만 보는데, 로그아웃은 토큰을 지우는
+  // 일이라 캐시에는 아무 신호도 가지 않는다. useViewer 는 토큰 자체를 구독한다.
+  const { me } = useViewer();
   const logout = useLogout();
   const loginHref = useLoginHref();
 

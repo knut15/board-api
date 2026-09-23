@@ -26,21 +26,13 @@ export function useMe() {
 export function useViewer(): { me: User | undefined; resolved: boolean } {
   const query = useMe();
   const hasToken = useSyncExternalStore(
-    subscribeToToken,
+    tokens.subscribe,
     () => tokens.get() !== null,
     () => false, // 서버 렌더링에서는 토큰을 알 수 없다. 로그아웃으로 본다
   );
 
   if (!hasToken) return { me: undefined, resolved: true };
   return { me: query.data, resolved: !query.isPending };
-}
-
-// localStorage 는 같은 탭에서 바뀔 때 이벤트를 쏘지 않는다.
-// 로그인·로그아웃은 화면을 다시 그리게 만드는 다른 경로(쿼리 캐시)가 있어서
-// 여기서는 다른 탭의 변경만 듣는다.
-function subscribeToToken(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  return () => window.removeEventListener("storage", onChange);
 }
 
 export function useLogin() {
@@ -60,7 +52,13 @@ export function useSignup() {
 export function useLogout() {
   const qc = useQueryClient();
   return () => {
-    api.logout();
+    // 순서가 있다. 캐시를 먼저 비우고 토큰을 지운다 —
+    // 토큰이 사라졌다는 알림을 받은 화면이 다시 그릴 때 캐시에 옛 사용자가 남아 있으면 안 된다.
+    //
+    // qc.clear() 만으로는 화면이 안 바뀐다. 캐시에서 쿼리를 **제거**하는 것은 구독자에게
+    // 새 결과를 밀어 주지 않아서, 훅은 지워지기 직전의 값을 그대로 들고 있다.
+    // 화면을 움직이는 것은 아래 api.logout() 이 일으키는 토큰 알림이다.
     qc.clear();
+    api.logout();
   };
 }

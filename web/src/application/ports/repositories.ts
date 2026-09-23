@@ -43,4 +43,7 @@ export type TokenStorage = {
   get(): string | null;
   set(token: string): void;
   clear(): void;
+  // 값이 바뀌면 듣는 쪽에 알린다. 화면이 토큰 유무로 갈리는데 저장만 하고 알리지 않으면
+  // 아무도 바뀐 것을 모른다 — 로그아웃이 새로고침해야 보이던 이유가 이것이었다.
+  subscribe(listener: () => void): () => void;
 };

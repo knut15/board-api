@@ -68,10 +68,15 @@ export const login =
 
 ### `TokenStorage` 포트가 따로 있는 이유
 
-`get()`·`set(token)`·`clear()` 셋뿐인 포트다. `localStorage` 를 유스케이스에서 직접 부르면 `login`
+`get()`·`set(token)`·`clear()`·`subscribe(listener)` 넷짜리 포트다. `localStorage` 를 유스케이스에서 직접 부르면 `login`
 이 브라우저에서만 도는 함수가 된다. 더 큰 이유는 다음에 있다 — 커리큘럼 6.7 에서 토큰을 httpOnly
 쿠키로 옮기면(쿠키는 자바스크립트가 읽지 않는다) 바뀌는 파일은 구현체
 `infrastructure/auth/tokenStorage.ts` 하나다. `login` 과 `logout` 은 그대로다.
+
+`subscribe` 는 나중에 붙었다. 처음에는 셋뿐이었는데 **값을 바꾸고도 아무에게도 알리지 않는
+저장소**여서, 로그아웃이 화면에 반영되지 않았다(→ `web-presentation.md`). 저장소가 상태를 들고
+있다면 그 상태가 바뀐 것을 알릴 수단도 같이 들고 있어야 한다 — `get`/`set` 만 있는 포트는
+"쓰는 쪽이 읽는 쪽을 전부 알고 있다" 는 가정 위에 서 있고, 화면이 늘면 그 가정이 먼저 깨진다.
 
 ## 왜 이렇게 했는가
 

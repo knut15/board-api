@@ -75,7 +75,7 @@ getNextPageParam: (last) => last.pageInfo.nextCursor ?? undefined,
 **무효화를 좁게 하지 않고 `posts.all` 로 넓게 잡았다.** 바뀐 항목만 손으로 고쳐 넣으면(`setQueryData`)
 요청이 줄지만, 무한스크롤로 쌓인 여러 페이지에서 그 항목을 찾아 고치는 코드가 필요하다. 지금 규모에서는 다시 받는 쪽이 싸고 무엇보다 틀릴 데가 없다.
 
-**로그인 성공은 `setQueryData`, 로그아웃은 `qc.clear()` 다.** 로그인 응답에 사용자 정보가 이미 들어 있으므로 한 번 더 물을 이유가 없다. 로그아웃은 반대다 — `me` 만 지우면 이전 사용자가 보던 목록·상세가 캐시에 남고 다음 사람이 그것을 먼저 본다.
+**로그인 성공은 `setQueryData`, 로그아웃은 `qc.clear()` 다.** 로그인 응답에 사용자 정보가 이미 들어 있으므로 한 번 더 물을 이유가 없다. 로그아웃은 반대다 — `me` 만 지우면 이전 사용자가 보던 목록·상세가 캐시에 남고 다음 사람이 그것을 먼저 본다. (`qc.clear()` 만으로는 화면이 안 바뀐다. 아래 9단계 절을 본다.)
 
 **에러 문구는 컴포넌트가 만든다.** `messageOf` 는 `UNAUTHENTICATED` 하나만 화면 말로 갈아입히고
 나머지는 서버 `message` 를 그대로 쓴다. "내 글만 삭제할 수 있습니다." 는 이미 사람이 읽을 말이다.
@@ -93,6 +93,68 @@ return { me: query.data, resolved: !query.isPending };
 `isPending` 으로 "아직 모른다" 를 판단하던 화면이 **로그아웃한 사람에게 글쓰기 폼을 보여 줬다.**
 토큰이 없다는 것은 그 자체로 답이다 — 기다릴 것이 없다. 고친 뒤 로그아웃 상태로 글쓰기 화면을 열면
 "글을 쓰려면 로그인해야 합니다." 가 뜨고, 링크가 `/login?returnTo=%2Fposts%2Fnew` 다.
+
+## 9단계에서 무엇이 바뀌었나
+
+### 로그아웃을 눌러도 새로고침해야 반영됐다
+
+사용자가 준 증상이다. **로그아웃을 눌러도 헤더에 닉네임이 그대로 있고, F5 를 눌러야 로그인
+링크로 바뀐다.**
+
+원인은 두 군데가 맞물려 있었다.
+
+```ts
+// 하나 — 저장소가 조용하다
+clear() { window.localStorage.removeItem(KEY); }   // 아무에게도 안 알린다
+
+// 둘 — 헤더가 캐시만 본다
+const { data: me } = useMe();                       // 토큰은 안 본다
+```
+
+`localStorage` 는 **같은 탭에서 바뀔 때 `storage` 이벤트를 쏘지 않는다.** 쓴 탭은 이미 알 것이라고
+보기 때문이다. 그래서 다른 탭의 로그아웃만 들렸다.
+
+남은 기대는 `qc.clear()` 였다. 그런데 캐시에서 쿼리를 **제거**하는 것은 구독자에게 새 결과를 밀어
+주지 않는다 — TanStack Query 의 `remove` 는 쿼리 객체를 캐시 목록에서 빼고 정리할 뿐이고,
+`useMe` 를 들고 있는 훅은 **지워지기 직전의 값을 그대로 쥔 채** 다시 그려질 이유를 못 받는다.
+로그인이 멀쩡했던 것은 `setQueryData` 가 **값을 밀어 주는** 쪽이라서다. 지우는 것과 넣는 것은
+대칭이 아니다.
+
+고친 방법은 저장소가 스스로 알리게 하는 것이다.
+
+```ts
+const listeners = new Set<() => void>();
+const notify = () => listeners.forEach((l) => l());
+
+set(token) { window.localStorage.setItem(KEY, token); notify(); },
+clear()    { window.localStorage.removeItem(KEY);     notify(); },
+subscribe(listener) {
+  listeners.add(listener);
+  window.addEventListener("storage", listener);   // 다른 탭 몫
+  return () => { listeners.delete(listener); window.removeEventListener("storage", listener); };
+},
+```
+
+`useViewer` 의 `useSyncExternalStore` 가 이 `subscribe` 를 그대로 받고, `SiteHeader` 는
+`useMe` 대신 `useViewer` 를 쓴다. **헤더가 캐시가 아니라 토큰을 보게 된 것**이 고친 핵심이다.
+
+`useLogout` 의 두 줄 순서도 정했다 — 캐시를 먼저 비우고 토큰을 지운다. 화면을 다시 그리게
+만드는 것은 토큰 알림이므로, 그 알림이 갈 때 캐시에 옛 사용자가 남아 있으면 안 된다.
+
+검증은 브라우저에서 했다. 로그인 상태에서 로그아웃을 누르고 **새로고침 없이** 헤더를 읽으면:
+
+```
+{ 토큰: null, 헤더: "로그인" }
+```
+
+### 아직 안 고친 것 — 로그아웃이 서버에 가지 않는다
+
+`logout` 은 `localStorage` 의 액세스 토큰만 지운다. **리프레시 쿠키는 그대로 남는다.** 같은
+브라우저에서 `POST /auth/refresh` 를 부르면 새 액세스 토큰이 나온다. 화면상으로는 로그아웃이지만
+서버가 보기에는 아직 로그인한 사람이다.
+
+제대로 하려면 서버에 `POST /auth/logout` 이 있어야 한다 — 쿠키를 지우고, 리프레시 토큰을
+무효로 표시한다. 지금 서버에는 그 라우트가 없다(`grep logout server/src` → 0건).
 
 ### 401 은 로그인 화면으로, 403 은 보내지 않는다
 
