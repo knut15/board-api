@@ -1,5 +1,19 @@
 # 게시판 API
 
+![Node.js](https://img.shields.io/badge/Node.js-22-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5.2.1-000000?style=flat-square&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-7.10.0-2D3748?style=flat-square&logo=prisma&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-4.6.5-3E67B1?style=flat-square&logo=zod&logoColor=white)
+![Pino](https://img.shields.io/badge/Pino-10.3.1-687634?style=flat-square&logo=pino&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16.3.5-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19.2.8-61DAFB?style=flat-square&logo=react&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3.3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![TanStack Query](https://img.shields.io/badge/TanStack_Query-5.103.1-FF4154?style=flat-square&logo=reactquery&logoColor=white)
+![GraphQL](https://img.shields.io/badge/GraphQL-17.0.2-E10098?style=flat-square&logo=graphql&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-11.20.0-F69220?style=flat-square&logo=pnpm&logoColor=white)
+
 프론트엔드에서 `fetch` 로만 만나던 서버를 직접 만드는 학습 프로젝트다.
 리소스 셋(users · posts · comments)으로 REST 설계를 잡고, 메모리 배열 → PostgreSQL →
 인증 → 배포까지 아홉 단계로 간다.
