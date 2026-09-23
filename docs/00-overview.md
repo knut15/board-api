@@ -39,6 +39,7 @@ board-api/
     compose.yaml   PostgreSQL 18.6 (Docker)
     openapi.yaml   프론트엔드에 보여주는 명세 (GET /docs 가 Swagger UI 로 띄운다)
     requests.http  호출 컬렉션 27개
+  scripts/         검사 스크립트 (회귀 43가지 · 배포 12가지 · 측정)
   web/             Next.js 16 클라이언트 (DDD 레이어)
     src/domain/          아무것도 import 하지 않는다
     src/application/     유스케이스와 포트

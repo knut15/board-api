@@ -53,6 +53,18 @@ API 명세는 Swagger UI 로 본다 — 배포본은 **https://web-production-76
 
 `server/requests.http` 를 위에서 아래로 누르면 3단계 시점의 호출 27개를 볼 수 있다.
 
+## 검사
+
+```bash
+pnpm verify              # 로컬 회귀 43가지 (DB 를 비운다)
+pnpm verify:deployed     # 배포본 12가지
+pnpm bench               # 목록 응답 시간
+```
+
+`pnpm verify` 는 **DB 를 비운다.** 끝나면 시드를 다시 넣는다 —
+`cd server && pnpm exec tsx prisma/7.1-seed.ts`.
+자세한 것은 [docs/14-verification.md](docs/14-verification.md) 에 있다.
+
 ## 어디까지 왔나
 
 | 단계 | 상태 |

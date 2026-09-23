@@ -6,7 +6,10 @@
   "scripts": {
     "dev:server": "pnpm --filter board-api-server dev",
     "dev:web": "pnpm --filter board-api-web dev",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "verify": "./scripts/verify.sh",
+    "verify:deployed": "./scripts/verify-deployed.sh",
+    "bench": "./scripts/bench.sh"
   },
   "devDependencies": {
     "railway": "^3.11.0"
