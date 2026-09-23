@@ -47,8 +47,9 @@ pnpm dev:server                           # Express  :4000
 pnpm dev:web                              # Next.js  :3000
 ```
 
-API 명세는 **http://localhost:4000/docs** 에서 Swagger UI 로 본다. 원문은
-`server/openapi.yaml` 이고 `GET /docs/openapi.yaml` 로도 받을 수 있다.
+API 명세는 Swagger UI 로 본다 — 배포본은 **https://web-production-76a42.up.railway.app/docs**,
+로컬은 **http://localhost:4000/docs** 다. 원문은 `server/openapi.yaml` 이고
+`/docs/openapi.yaml` 로도 받을 수 있다.
 
 `server/requests.http` 를 위에서 아래로 누르면 3단계 시점의 호출 27개를 볼 수 있다.
 
