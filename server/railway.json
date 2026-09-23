@@ -1,0 +1,18 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "server/Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "node dist/server.js",
+    "preDeployCommand": "./node_modules/.bin/prisma migrate deploy",
+    "preDeployTimeoutSeconds": 120,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 30,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5,
+    "drainingSeconds": 15,
+    "overlapSeconds": 10
+  }
+}

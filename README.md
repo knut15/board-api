@@ -3,7 +3,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-22-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5.2.1-000000?style=flat-square&logo=express&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18.6-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-7.10.0-2D3748?style=flat-square&logo=prisma&logoColor=white)
 ![Zod](https://img.shields.io/badge/Zod-4.6.5-3E67B1?style=flat-square&logo=zod&logoColor=white)
 ![Pino](https://img.shields.io/badge/Pino-10.3.1-687634?style=flat-square&logo=pino&logoColor=white)
@@ -29,7 +29,7 @@
 |---|---|
 | 런타임 | Node.js 22 + TypeScript (ESM) |
 | 웹 프레임워크 | Express 5 |
-| 데이터베이스 | PostgreSQL 16 (Docker) + Prisma 7 |
+| 데이터베이스 | PostgreSQL 18.6 (Docker) + Prisma 7 |
 | 검증 | zod 4 |
 | 인증 | argon2id + JWT(jose) + httpOnly 쿠키 리프레시 |
 | 로그 | pino |

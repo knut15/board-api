@@ -46,7 +46,7 @@ const rows = await prisma.post.findMany({
 ### `take: limit + 1` 은 3단계와 같은 수법이다
 
 `limit` 이 20이면 21건을 떠서, 21건이 오면 `hasNext = true` 로 두고 20건만 싣는다. 대안인 `COUNT(*)` 는
-조건에 맞는 행을 **모두** 지나간다(아래 표에서 10004행 · 1.195 ms). 프론트가 필요한 것은 "더 보기를
+조건에 맞는 행을 **모두** 지나간다(아래 표에서 10000행 · 1.259 ms). 프론트가 필요한 것은 "더 보기를
 보여줄까" 하나라서 `pageInfo` 에 총 개수 필드를 두지 않았다(02-api.md 2.4).
 
 ### `P2025` 번역은 이제 여기 없다
@@ -68,12 +68,15 @@ const rows = await prisma.post.findMany({
 
 ## 7단계에서 무엇이 바뀌었나
 
+> 아래 수치는 2026-09-23 에 **PostgreSQL 18.6** 에서 다시 잰 것이다.
+> 처음 잰 16.15 값과 결론은 같고 숫자만 조금 움직였다([09-list-performance.md](../09-list-performance.md)).
+
 글 1만 건 · 댓글 5만 건 · 유저 20명을 넣고 잰 값이다. **인덱스 전후** — `EXPLAIN ANALYZE`, `SELECT id FROM posts ORDER BY "createdAt" DESC, id DESC LIMIT 21`
 
 | | 전 | 후 |
 |---|---|---|
 | 계획 | `Seq Scan` + `Sort`(top-N heapsort) | `Index Only Scan`, `Heap Fetches: 0` |
-| Execution Time | **1.841 ms** | **0.056 ms** |
+| Execution Time | **1.922 ms** | **0.049 ms** |
 
 `@@index([createdAt(sort: Desc), id(sort: Desc)])` 의 방향이 `orderBy` 와 같아서 DB 가 인덱스를 앞에서
 그대로 읽고 21건에서 멈춘다. `Heap Fetches: 0` 은 테이블 본체를 한 번도 안 열었다는 뜻이다.
@@ -82,12 +85,12 @@ const rows = await prisma.post.findMany({
 
 | | 읽은 행 | Execution Time |
 |---|---|---|
-| `OFFSET 0` | 20 | 0.046 ms |
-| `OFFSET 1000` | 1020 | 0.203 ms |
-| `OFFSET 5000` | 5020 | 0.727 ms |
-| `OFFSET 9980` | **10000** | 1.434 ms |
+| `OFFSET 0` | 20 | 0.053 ms |
+| `OFFSET 1000` | 1020 | 0.215 ms |
+| `OFFSET 5000` | 5020 | 0.725 ms |
+| `OFFSET 9980` | **10000** | 1.504 ms |
 | 커서로 같은 자리 | **20** | 0.059 ms |
-| `COUNT(*)` | 10004 | 1.195 ms |
+| `COUNT(*)` | 10000 | 1.259 ms |
 
 offset 은 건너뛸 행을 **읽고 버린다** — 마지막 페이지에서 1만 행을 읽고 20행을 준다. 커서는 어디서든
 20행이다. API 로도 같다: 첫 페이지 16.3 ms, 9980번째부터 커서로 12.6 ms(중앙값 15회).

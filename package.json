@@ -7,5 +7,8 @@
     "dev:server": "pnpm --filter board-api-server dev",
     "dev:web": "pnpm --filter board-api-web dev",
     "typecheck": "pnpm -r --if-present typecheck"
+  },
+  "devDependencies": {
+    "railway": "^3.11.0"
   }
 }

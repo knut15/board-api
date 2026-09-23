@@ -36,7 +36,7 @@ board-api/
     Dockerfile     배포용 이미지 (실제로 빌드해 돌려 봤다)
     src/
     prisma/        schema.prisma · 마이그레이션 2개 · SQL/트랜잭션 실습
-    compose.yaml   PostgreSQL 16 (Docker)
+    compose.yaml   PostgreSQL 18.6 (Docker)
     openapi.yaml   프론트엔드에 보여주는 명세 (Swagger UI 로 띄운다)
     requests.http  호출 컬렉션 27개
   web/             Next.js 16 클라이언트 (DDD 레이어)
@@ -73,7 +73,7 @@ DB 가 없으면 서버가 부팅에서 죽는다. `DATABASE_URL` 을 못 찾으
 | 무엇 | 어떻게 | 고칠 위치 |
 |---|---|---|
 | 서버 API 스타일 | **REST**. 커리큘럼 1~7단계가 전부 REST 전제다 | `docs/02-api.md` |
-| 데이터베이스 | **PostgreSQL 16** (Docker) + **Prisma 7.10.0** 고정 | `server/prisma/schema.prisma` |
+| 데이터베이스 | **PostgreSQL 18.6** (Docker) + **Prisma 7.10.0** 고정. 배포와 마이너까지 맞췄다 | `server/prisma/schema.prisma` |
 | 요청 검증 | **zod 4** + 미들웨어 하나. 400/422 는 위치와 이슈 코드로 가른다 | `server/src/schemas/index.ts` |
 | 인증 | **argon2id** 해시 + **JWT**(액세스 15분) + `httpOnly` 쿠키 리프레시(14일) | `server/src/auth/` |
 | 쿠키 중계 | 로그인·재발급만 GraphQL 이 아니라 `/api/auth/*` REST 를 거친다 | `web/src/app/api/auth/` |

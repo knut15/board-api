@@ -1,0 +1,10 @@
+# 업로드에서 뺀다. .dockerignore 는 빌드 컨텍스트를 줄이고,
+# 이 파일은 Railway 로 올라가는 양 자체를 줄인다.
+node_modules
+**/node_modules
+**/dist
+**/.next
+.git
+.omc
+.env
+**/.env

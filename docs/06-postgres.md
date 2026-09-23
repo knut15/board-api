@@ -23,7 +23,10 @@ pnpm --filter board-api-server db:nuke   # 볼륨까지 지운다 (데이터가 
 `colima start` 로 VM 을 먼저 띄워야 `docker` 명령이 응답한다. `docker compose` 하위 명령은
 없고 `docker-compose` 실행 파일이 따로 있어서 스크립트가 그쪽을 부른다.
 
-띄운 것: **PostgreSQL 16.15** (`postgres:16-alpine`).
+띄운 것: **PostgreSQL 18.6** (`postgres:18.6-alpine`).
+
+> 이 문서를 처음 쓸 때는 16.15 였다. 9단계에서 배포(Railway 관리형 Postgres 18)와 버전을 맞추려고
+> 로컬을 18.6 으로 올렸다. 그 과정과 7단계 측정을 다시 잰 값은 [13-deploy.md](./13-deploy.md) 에 있다.
 
 ## 4.2 SQL 을 먼저 손으로
 
