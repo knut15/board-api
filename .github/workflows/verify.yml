@@ -1,0 +1,88 @@
+# 문서: docs/14-verification.md
+#
+# push 마다 검사 43가지를 돌린다. 로컬에서 돌리는 것과 같은 스크립트다 —
+# CI 전용 검사를 따로 만들면 둘이 갈라지고, 갈라진 쪽은 아무도 안 고친다.
+
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    # 로컬의 compose.yaml 과 같은 이미지다. 버전을 맞추는 이유는
+    # "로컬에서는 되는데" 를 없애려는 것이고, 그건 이 레포가 이미 세 번 겪었다.
+    services:
+      db:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_USER: board
+          POSTGRES_PASSWORD: board
+          POSTGRES_DB: board
+        ports: ["5432:5432"]
+        # 러너에는 compose 의 healthcheck 가 없다. 여기서 같은 일을 한다 —
+        # 이게 없으면 다음 단계가 아직 안 뜬 DB 에 붙으러 간다.
+        options: >-
+          --health-cmd "pg_isready -U board -d board"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://board:board@localhost:5432/board?schema=public
+      # 검사용이다. 운영 비밀이 아니므로 값이 코드에 있어도 된다.
+      # 32자 이상이어야 env.ts 의 검증을 통과한다(9.1).
+      JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
+      # lib.sh 의 기본값은 컨테이너 안의 psql 을 부른다. 여기에는 compose 가 없으므로
+      # 러너에 깔려 있는 psql 로 바꾼다.
+      PSQL: psql postgresql://board:board@localhost:5432/board -tAc
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: 타입 검사
+        run: pnpm typecheck
+
+      - name: 린트
+        run: pnpm --filter board-api-web lint
+
+      - name: 마이그레이션
+        run: pnpm --filter board-api-server exec prisma migrate deploy
+
+      - name: 서버 띄우기
+        run: |
+          # 로그를 파일로 받아 둔다. 서버가 안 뜨면 이유가 거기에 있다 —
+          # env.ts 가 어느 환경변수가 왜 틀렸는지 한 줄씩 찍는다(9.1).
+          pnpm --filter board-api-server exec tsx src/server.ts > /tmp/server.log 2>&1 &
+          # 뜰 때까지 기다린다. sleep 로 어림잡으면 느린 날 실패하고 빠른 날 낭비한다.
+          for i in $(seq 30); do
+            curl -sf http://localhost:4000/health > /dev/null && exit 0
+            sleep 1
+          done
+          echo "서버가 30초 안에 뜨지 않았다. 로그:" >&2
+          cat /tmp/server.log >&2
+          exit 1
+
+      - name: 검사 43가지
+        run: ./scripts/verify.sh
+
+      - name: 웹 빌드
+        run: pnpm --filter board-api-web build
+
+      # 9.8 에서 배운 것 — 실패했을 때 로그를 볼 수 없으면 원인을 못 찾는다.
+      - name: 서버 로그 (실패했을 때만)
+        if: failure()
+        run: cat /tmp/server.log

@@ -63,6 +63,8 @@ pnpm bench               # 목록 응답 시간
 
 `pnpm verify` 는 **DB 를 비운다.** 끝나면 시드를 다시 넣는다 —
 `cd server && pnpm exec tsx prisma/7.1-seed.ts`.
+
+같은 스크립트가 push 마다 GitHub Actions 에서 돈다(`.github/workflows/verify.yml`).
 자세한 것은 [docs/14-verification.md](docs/14-verification.md) 에 있다.
 
 ## 어디까지 왔나
