@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { requestLogger } from "./middleware/logger.js";
 import { currentUser } from "./middleware/currentUser.js";
 import { authRouter, meRouter } from "./routes/auth.js";
+import { docsRouter } from "./routes/docs.js";
 import { postsRouter } from "./routes/posts.js";
 import { postCommentsRouter, commentsRouter } from "./routes/comments.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -34,6 +35,9 @@ export function createApp() {
   });
 
   // 5. 라우터. 더 구체적인 경로를 먼저 등록한다.
+  // 명세 화면. 인증을 걸지 않는다 — 계약은 부르기 전에 읽는 것이다.
+  app.use("/docs", docsRouter);
+
   app.use("/auth", authRouter);
   app.use("/me", meRouter);
   app.use("/posts/:postId/comments", postCommentsRouter);

@@ -45,6 +45,8 @@ COPY --from=bundle /bundle/dist ./dist
 COPY --from=bundle /bundle/prisma ./prisma
 COPY --from=bundle /bundle/package.json ./package.json
 COPY --from=build /app/server/prisma.config.ts ./prisma.config.ts
+# 명세 화면(/docs)이 실행 디렉터리에서 이 파일을 읽는다. 빼먹으면 /docs 가 500 이다.
+COPY --from=build /app/server/openapi.yaml ./openapi.yaml
 
 # 여기서 한 번 더 생성한다.
 # pnpm deploy 는 스토어에 있는 패키지 원본을 복사하므로, 앞 단계에서 만든

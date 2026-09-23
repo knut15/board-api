@@ -17,11 +17,12 @@ app.use(logger);                                         // 1
 app.use(express.json());                                 // 2
 app.use(currentUser);                                    // 3
 app.get("/health", …);                                   // 4
-app.use("/auth", authRouter);                            // 5
+app.use("/docs", docsRouter);                            // 5
+app.use("/auth", authRouter);                            // 6
 app.use("/posts/:postId/comments", postCommentsRouter);
 app.use("/posts", postsRouter);
-app.use((_req, res) => { fail(res, 404, "ROUTE_NOT_FOUND", …); });      // 6
-app.use((err, _req, res, _next) => { … fail(res, 500, …); });           // 7
+app.use((_req, res) => { fail(res, 404, "ROUTE_NOT_FOUND", …); });      // 7
+app.use((err, _req, res, _next) => { … fail(res, 500, …); });           // 8
 ```
 
 `logger` 가 가장 위인 이유는 뒤에서 무슨 일이 나도 요청이 들어온 사실은 남기기 위해서다. 2번
@@ -45,11 +46,11 @@ application/json` 인 요청뿐이다 — 프론트가 헤더를 빼먹으면 �
 사실에 기대지 않고 의도를 먼저 보이려는 것이고, `postsRouter` 에 `/:id/comments` 가 생기는 날
 부터는 순서가 곧 결과다.
 
-6번은 경로를 안 적은 `app.use` 라 **모든 요청에 맞는다.** 라우터 등록보다 위에 두면 첫 요청부터
+7번은 경로를 안 적은 `app.use` 라 **모든 요청에 맞는다.** 라우터 등록보다 위에 두면 첫 요청부터
 전부 `404` 다. 여기까지 내려온 요청은 어느 라우터도 손들지 않은 요청이므로 "그런 경로가 없다"
 가 맞는 답이고, 코드는 리소스가 없는 `POST_NOT_FOUND` 와 구분해 `ROUTE_NOT_FOUND` 다(2.4).
 
-7번이 에러 핸들러인 것은 **인자가 4개**라서다. Express 는 등록된 함수의 인자 개수를 세어 3개면
+8번이 에러 핸들러인 것은 **인자가 4개**라서다. Express 는 등록된 함수의 인자 개수를 세어 3개면
 보통 미들웨어, 4개면 에러 핸들러로 분류한다. 안 쓰는 `_next` 를 지우면 인자가 3개가 되고 그
 순간 이 함수는 에러를 못 받는 평범한 미들웨어가 된다 — 쓰지 않는 인자가 문법이 아니라 신호다.
 
@@ -67,14 +68,14 @@ application/json` 인 요청뿐이다 — 프론트가 헤더를 빼먹으면 �
 
 1. `app.use(express.json())` 을 주석 처리하고 `POST /auth/signup` 에 정상 바디를 보낸다 →
    응답이 `400` + `VALIDATION_FAILED` 로 바뀐다. 라우터는 한 줄도 안 고쳤는데 결과가 바뀐다.
-2. 6번 404 미들웨어를 라우터 등록 **위로** 옮긴다 → `GET /health` 까지 포함해 모든 요청이
+2. 7번 404 미들웨어를 라우터 등록 **위로** 옮긴다 → `GET /health` 까지 포함해 모든 요청이
    `ROUTE_NOT_FOUND` 로 답하는 것을 확인하고 되돌린다.
-3. 라우터 아무 곳에 `throw new Error("boom")` 을 넣고 호출한 뒤, 7번 핸들러의 `_next` 를 지워
+3. 라우터 아무 곳에 `throw new Error("boom")` 을 넣고 호출한 뒤, 8번 핸들러의 `_next` 를 지워
    인자를 3개로 만들고 다시 호출한다 → 두 응답을 비교하면 Express 의 판별 기준이 드러난다.
 
 ## 다음 단계에서 어떻게 바뀌는가
 
-5단계에서 7번 핸들러가 `AppError` 를 받아 상태 코드와 `code` 를 꺼내 쓰게 되고 라우터의
+5단계에서 8번 핸들러가 `AppError` 를 받아 상태 코드와 `code` 를 꺼내 쓰게 되고 라우터의
 `fail()` 직접 호출이 사라진다(→ `respond.md`). 6.4 에서는 3번 `currentUser` 의 안쪽만 JWT
 검증으로 바뀌며 줄 순서는 그대로다. 9.2 · 9.3 에서 CORS · helmet · rate limit 이 1번과 2번
 사이로 들어오고, 9.5 에서 `logger` 가 pino 로 교체된다 — 자리는 둘 다 지금과 같다.

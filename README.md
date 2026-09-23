@@ -47,8 +47,10 @@ pnpm dev:server                           # Express  :4000
 pnpm dev:web                              # Next.js  :3000
 ```
 
-`server/requests.http` 를 위에서 아래로 누르면 엔드포인트 12개를 전부 볼 수 있다.
-명세는 `server/openapi.yaml` 에 있다.
+API 명세는 **http://localhost:4000/docs** 에서 Swagger UI 로 본다. 원문은
+`server/openapi.yaml` 이고 `GET /docs/openapi.yaml` 로도 받을 수 있다.
+
+`server/requests.http` 를 위에서 아래로 누르면 3단계 시점의 호출 27개를 볼 수 있다.
 
 ## 어디까지 왔나
 
