@@ -16,6 +16,14 @@ export const login =
     return result.user;
   };
 
-export const logout = (tokens: TokenStorage) => () => tokens.clear();
+// 로그아웃은 두 군데를 내려야 한다. 액세스 토큰은 이쪽(localStorage)에, 리프레시 토큰은
+// 저쪽(httpOnly 쿠키)에 있다. 쿠키는 자바스크립트가 읽지도 지우지도 못하므로 서버에 부탁한다.
+//
+// 순서가 있다. **로컬을 먼저 내린다** — 서버 왕복을 기다리는 동안 화면이 로그인 상태로
+// 남아 있으면 "눌렀는데 그대로" 가 되고, 그것이 고치기 전의 증상이었다.
+export const logout = (gateway: AuthGateway, tokens: TokenStorage) => async () => {
+  tokens.clear();
+  await gateway.logout();
+};
 
 export const getMe = (gateway: AuthGateway) => () => gateway.me();

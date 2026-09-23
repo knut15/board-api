@@ -10,6 +10,7 @@ import { validate, validBody } from "../middleware/validate.js";
 import { LoginBody, SignupBody } from "../schemas/index.js";
 import { hashPassword, verifyPassword } from "../auth/password.js";
 import {
+  clearRefreshCookieOptions,
   REFRESH_COOKIE,
   refreshCookieOptions,
   signAccessToken,
@@ -73,6 +74,19 @@ authRouter.post("/refresh", async (req, res) => {
   // 옛 토큰이 새어 나가도 유효 기간이 그만큼 짧아진다.
   await issueTokens(res, user.id);
   res.json({ token: await signAccessToken(user.id), user: await userView(user.id) });
+});
+
+// 13. POST /auth/logout → 204
+//
+// **로그인을 요구하지 않는다.** 액세스 토큰이 만료된 사람도 로그아웃할 수 있어야 한다 —
+// 만료됐다고 401 을 주면 쿠키가 살아남고, 그 사람은 영영 로그아웃하지 못한다.
+// 쿠키가 없는 채로 불러도 204 다. 결과가 같으면 같은 답을 준다.
+//
+// 이것으로 지워지는 것은 **이 브라우저의 쿠키**다. 새어 나간 리프레시 토큰은 여전히
+// 만료까지 14일을 산다. 그것까지 막으려면 서버가 상태를 들어야 한다 — docs/code/routes-auth.md.
+authRouter.post("/logout", (_req, res) => {
+  res.clearCookie(REFRESH_COOKIE, clearRefreshCookieOptions);
+  res.status(204).end();
 });
 
 // 3. GET /me → 200

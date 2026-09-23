@@ -11,7 +11,7 @@ import type { Page, Post, PostSummary } from "@/domain/post/entity";
 import type { Comment } from "@/domain/comment/entity";
 import type { User } from "@/domain/user/entity";
 import * as doc from "../graphql/documents";
-import { loginRequest, refreshRequest } from "../auth/authApi";
+import { loginRequest, logoutRequest, refreshRequest } from "../auth/authApi";
 
 type Request = <T>(document: string, variables?: object) => Promise<T>;
 
@@ -69,6 +69,7 @@ export function createAuthGateway(request: Request): AuthGateway {
     // 브라우저가 받아야 하는데, 그 일은 REST 한 겹이 훨씬 단순하게 한다.
     login: loginRequest,
     refresh: refreshRequest,
+    logout: logoutRequest,
     async me() {
       const d = await request<{ me: User }>(doc.ME_QUERY);
       return d.me;

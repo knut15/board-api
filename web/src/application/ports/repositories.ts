@@ -34,6 +34,8 @@ export type AuthGateway = {
   login(input: { email: string; password: string }): Promise<{ token: string; user: User }>;
   // 8.7 — 액세스 토큰이 만료됐을 때 리프레시 쿠키로 새것을 받는다.
   refresh(): Promise<{ token: string; user: User }>;
+  // 리프레시 쿠키는 httpOnly 라 **서버만 지울 수 있다.** 그래서 로그아웃이 요청이다.
+  logout(): Promise<void>;
   me(): Promise<User>;
 };
 

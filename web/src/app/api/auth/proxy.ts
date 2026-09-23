@@ -36,5 +36,7 @@ export async function proxyAuth(request: Request, path: string): Promise<Respons
     headers.append("set-cookie", raw.replace("Path=/auth", "Path=/api/auth"));
   }
 
-  return new Response(body, { status: upstream.status, headers });
+  // 204 에는 본문이 없어야 한다. Response 는 빈 문자열도 "본문이 있다" 로 보고 거부한다 —
+  // 로그아웃(204)을 붙이면서 걸렸다.
+  return new Response(body === "" ? null : body, { status: upstream.status, headers });
 }

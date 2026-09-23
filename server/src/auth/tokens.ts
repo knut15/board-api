@@ -61,10 +61,18 @@ export async function verifyToken(token: string, expected: TokenKind): Promise<s
 // 새어 나가도 15분 뒤에는 쓸모가 없다.
 export const REFRESH_COOKIE = "refresh_token";
 
-export const refreshCookieOptions = {
+// 브라우저는 이름만으로 쿠키를 가리지 않는다. **path·sameSite·secure 까지 같아야 같은 쿠키다.**
+// 그래서 심는 값과 지우는 값을 한 곳에서 만든다 — 따로 적어 두면 하나만 고치는 날이 오고,
+// 그날 로그아웃이 조용히 실패한다(쿠키가 안 지워지는데 응답은 204 다).
+const cookieScope = {
   httpOnly: true,
   sameSite: "strict" as const,
   secure: env.NODE_ENV === "production",
   path: "/auth",
-  maxAge: 14 * 24 * 60 * 60 * 1000,
 };
+
+export const refreshCookieOptions = { ...cookieScope, maxAge: 14 * 24 * 60 * 60 * 1000 };
+
+// 지울 때는 maxAge 를 뺀다. 만료 시각을 과거로 넣는 것이 "지운다" 의 실제 구현이라
+// 남은 수명을 같이 보내면 서로 싸운다.
+export const clearRefreshCookieOptions = cookieScope;

@@ -104,6 +104,33 @@ JSON 으로 풀었다가 다시 묶으면 서버가 필드 하나를 늘릴 때 
 401 을 만났을 때 이 재발급을 자동으로 부르는 쪽은 `graphql/client.ts` 이고, 둘을 잇는 배선은
 `composition/container.ts` 에 있다([web-composition.md](./web-composition.md)).
 
+## 9단계에서 무엇이 바뀌었나
+
+### `/api/auth/logout` 이 늘었다
+
+REST 로 빼 둔 경로가 둘에서 셋이 됐다. 기준은 처음과 같다 — **쿠키를 다루는 요청만 여기로
+온다.** 로그아웃은 서버가 `Set-Cookie` 로 쿠키를 지우게 하는 요청이므로 자격이 있다.
+
+```ts
+export const POST = (request: Request) => proxyAuth(request, "/auth/logout");
+```
+
+`proxyAuth` 는 한 줄 고쳤다.
+
+```ts
+return new Response(body === "" ? null : body, { status: upstream.status, headers });
+```
+
+로그아웃은 `204` 고 `204` 에는 본문이 없어야 한다. `Response` 는 **빈 문자열도 "본문이 있다" 로
+보고 거부한다.** 붙이자마자 걸린 것이 이것이었다.
+
+`Path` 고쳐 쓰기는 지우는 쿠키에도 그대로 적용된다. Express 가 보낸 `Path=/auth` 가
+`Path=/api/auth` 로 바뀌어야 브라우저가 **심을 때와 같은 쿠키로 인식하고** 지운다.
+
+```
+set-cookie: refresh_token=; Path=/api/auth; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Strict
+```
+
 ## 직접 해 볼 것
 
 1. `proxy.ts` 의 `.replace("Path=/auth", "Path=/api/auth")` 를 지우고 로그인한다.

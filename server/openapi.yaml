@@ -139,6 +139,24 @@ paths:
               example:
                 error: { code: UNAUTHENTICATED, message: 리프레시 토큰이 없습니다., details: null }
 
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: 로그아웃
+      description: |
+        `httpOnly` 쿠키(`refresh_token`)를 지운다. 그 쿠키는 자바스크립트가 읽지도 지우지도
+        못하므로 **서버만 지울 수 있다** — 프론트는 액세스 토큰을 버리고 이 요청을 한 번 부른다.
+
+        **로그인을 요구하지 않는다.** 액세스 토큰이 만료된 사람도 로그아웃할 수 있어야 한다.
+        쿠키가 없는 채로 불러도 `204` 다.
+
+        지워지는 것은 **이 브라우저의 쿠키**다. 이미 새어 나간 리프레시 토큰은 만료까지
+        유효하다. 그것까지 막으려면 서버가 발급 이력을 들고 있어야 한다.
+      security: []
+      responses:
+        "204":
+          description: 로그아웃됨. 본문이 없다
+
   /me:
     get:
       tags: [auth]

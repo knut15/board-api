@@ -48,6 +48,6 @@ export const api = {
 
   signup: authUseCase.signup(auth),
   login: authUseCase.login(auth, browserTokenStorage),
-  logout: authUseCase.logout(browserTokenStorage),
+  logout: authUseCase.logout(auth, browserTokenStorage),
   getMe: authUseCase.getMe(auth),
 };

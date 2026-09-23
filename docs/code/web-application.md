@@ -73,6 +73,21 @@ export const login =
 쿠키로 옮기면(쿠키는 자바스크립트가 읽지 않는다) 바뀌는 파일은 구현체
 `infrastructure/auth/tokenStorage.ts` 하나다. `login` 과 `logout` 은 그대로다.
 
+`AuthGateway` 에는 `logout()` 이 늘었다. 로그아웃이 **요청**인 이유는 리프레시 토큰이
+`httpOnly` 쿠키에 있어서다 — 자바스크립트가 읽지도 지우지도 못하므로 서버에 부탁하는 수밖에 없다.
+그래서 유스케이스가 저장소 하나가 아니라 둘을 받는다.
+
+```ts
+export const logout = (gateway: AuthGateway, tokens: TokenStorage) => async () => {
+  tokens.clear();
+  await gateway.logout();
+};
+```
+
+순서가 결과를 바꾼다. **로컬을 먼저 내린다.** 서버 왕복을 먼저 기다리면 그동안 화면이 로그인
+상태로 남고, 그게 고치던 증상이다. 반대로 서버가 실패해도 이 브라우저는 이미 내려와 있다 —
+둘 중 하나만 성공한다면 이쪽이어야 한다.
+
 `subscribe` 는 나중에 붙었다. 처음에는 셋뿐이었는데 **값을 바꾸고도 아무에게도 알리지 않는
 저장소**여서, 로그아웃이 화면에 반영되지 않았다(→ `web-presentation.md`). 저장소가 상태를 들고
 있다면 그 상태가 바뀐 것을 알릴 수단도 같이 들고 있어야 한다 — `get`/`set` 만 있는 포트는

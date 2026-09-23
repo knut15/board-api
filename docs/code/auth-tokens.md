@@ -92,6 +92,31 @@ export const refreshCookieOptions = {
 3. **`sign` 을 감추고 `signAccessToken` · `signRefreshToken` 만 내보낸 것.** 종류와 만료 시간이
    한 쌍으로 묶여 나간다. `sign(id, "access", "14d")` 같은 조합을 부를 자리를 없앤다.
 
+## 9단계에서 무엇이 바뀌었나
+
+### 쿠키 속성을 한 곳에서 만든다
+
+로그아웃(`POST /auth/logout`)이 생기면서 **쿠키를 지우는 쪽**이 필요해졌다.
+
+```ts
+const cookieScope = {
+  httpOnly: true,
+  sameSite: "strict" as const,
+  secure: env.NODE_ENV === "production",
+  path: "/auth",
+};
+
+export const refreshCookieOptions = { ...cookieScope, maxAge: 14 * 24 * 60 * 60 * 1000 };
+export const clearRefreshCookieOptions = cookieScope;
+```
+
+브라우저는 이름만 보고 쿠키를 가리지 않는다. **`path`·`sameSite`·`secure` 까지 같아야 같은
+쿠키로 본다.** 지우는 옵션을 따로 적어 두면 심는 쪽만 고치는 날이 오고, 그날 로그아웃은
+`204` 를 돌려주면서 쿠키를 남긴다 — 성공처럼 보이는 실패다.
+
+`maxAge` 만 뺀다. "지운다" 는 것은 실제로는 **만료 시각을 과거로 심는 것**이라, 남은 수명을
+같이 보내면 두 값이 서로 싸운다.
+
 ## 직접 해 볼 것
 
 1. 토큰을 점 기준으로 잘라 가운데 조각을 base64url 디코드한다 → 키가 넷뿐이다.
