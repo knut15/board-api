@@ -136,6 +136,10 @@ CREATE INDEX "posts_authorId_idx" ON "posts"("authorId");
 **약 39배.** `Index Only Scan` 은 테이블을 아예 건드리지 않는다 — 필요한 컬럼이 인덱스 안에 다 있어서
 `Heap Fetches: 0` 이다.
 
+여기서 `Heap Fetches: 20` 이 나와도 인덱스가 안 잡힌 것이 아니다. **막 시드한 직후라면
+가시성 맵이 비어 있어서** Postgres 가 행이 보이는지 테이블을 열어 확인한다.
+`VACUUM ANALYZE posts` 를 한 번 돌리면 0 이 된다([11-operations.md](./11-operations.md)).
+
 ### 전후 — HTTP 응답 시간
 
 | 요청 | 전 | 후 |

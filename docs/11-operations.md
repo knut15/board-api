@@ -174,10 +174,10 @@ Next.js 가 BFF 를 들고 있어서 **서버 두 개를 올려야 한다**(Expr
 Next 쪽에는 `BOARD_API_URL` 이 필요하고, 그 값이 플랫폼 안에서 Express 를 가리켜야 한다.
 지금은 기본값 `http://localhost:4000` 이다.
 
-## 운영에서 이미 걸린 것 하나
+## 운영에서 걸린 것 하나 — 프로젝트 이름
 
-`server/compose.yaml` 에 `name:` 이 없어서 **디렉터리 이름 `server` 가 프로젝트 이름이 된다.**
-컨테이너는 `server-db-1`, 볼륨은 `server_pgdata` 다.
+`server/compose.yaml` 에 `name:` 이 없으면 **디렉터리 이름 `server` 가 프로젝트 이름이 된다.**
+컨테이너는 `server-db-1`, 볼륨은 `server_pgdata` 였다.
 
 `~/Workspace` 아래에 DB 정의를 `server/` 에 두는 레포가 또 있으면 **둘이 같은 컨테이너와 볼륨을
 공유한다.** 한쪽에서 `up -d` 를 하면 다른 쪽 컨테이너가 재생성된다. Postgres 는 `PGDATA` 가 이미
@@ -192,10 +192,31 @@ services:
   db: …
 ```
 
-다만 프로젝트 이름이 바뀌면 컨테이너와 볼륨 이름도 바뀐다. 지금 볼륨(`server_pgdata`)은 남고
-빈 볼륨(`board-api_pgdata`)이 새로 생긴다 — **DB 가 비어 보인다.** 이 레포의 데이터는 전부
-시드라서 다시 넣으면 그만이지만(6초), 그 사실을 모르고 겪으면 당황한다.
+### 고칠 때 실제로 일어난 일
+
+이름이 바뀌면 컨테이너와 볼륨 이름도 바뀐다. 옛 볼륨은 **지워지지 않고 그 자리에 남는다.**
+
+```
+docker-compose down -v     Volume server_pgdata Removed
+docker-compose up -d       Container board-api-db-1 Started
+```
+
+`down -v` 로 옛 볼륨을 직접 지우고 새로 띄웠다. 그냥 `up -d` 만 하면 `server_pgdata` 가
+아무도 안 쓰는 채로 남아 디스크만 먹는다.
+
+새 볼륨은 비어 있으므로 마이그레이션과 시드를 다시 돌린다.
+
+```
+prisma migrate deploy      All migrations have been successfully applied.
+tsx prisma/7.1-seed.ts     유저 20 · 글 10000 · 댓글 50000 — 6.1초
+```
+
+**시드 직후에는 `Heap Fetches` 가 0 이 아니다.** 7단계에서 인덱스만 읽고 끝났다고 적은 그
+질의가 막 시드한 테이블에서는 `Heap Fetches: 20` 으로 나온다 — 가시성 맵이 아직 비어 있어서
+Postgres 가 행이 보이는지 테이블을 열어 확인해야 한다. `VACUUM ANALYZE posts` 를 한 번 돌리면
+0 이 된다. 자동 청소가 알아서 하는 일이라 평소에는 안 보이고, **갓 넣은 데이터에서만 보인다.**
 
 ## 다음
 
-플랫폼을 정하면 9.3·9.4·9.7·9.8 을 잇는다. 계정 만들기는 사람이 해야 하는 일이다.
+이미지로 만들어 돌려 보는 것이 [12-deploy-prep.md](./12-deploy-prep.md),
+실제로 올린 것이 [13-deploy.md](./13-deploy.md) 다.
