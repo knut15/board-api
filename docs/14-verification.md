@@ -133,6 +133,35 @@ PSQL: psql postgresql://board:board@localhost:5432/board -tAc
 **서버가 뜰 때까지 기다린다.** `sleep 10` 으로 어림잡으면 느린 날 실패하고 빠른 날 낭비한다.
 `/health` 를 1초 간격으로 찔러 본다 — 로컬에서 재 보니 2초에 떴다.
 
+### CI 가 첫 판에 잡은 것
+
+붙이자마자 실패했다. 코드 문제였다.
+
+```
+Module '"@prisma/client"' has no exported member 'PrismaClient'.
+Binding element '_count' implicitly has an 'any' type.
+```
+
+**Prisma 클라이언트는 `node_modules` 안에 생성되는 코드다.** `pnpm install` 만으로는 존재하지
+않는다. 로컬에서는 오래전에 한 번 생성해 둬서 안 보였고, 빈 체크아웃에서만 드러난다.
+
+```yaml
+- name: Prisma 클라이언트 생성
+  run: pnpm --filter board-api-server exec prisma generate
+```
+
+9.2 에서 도커 이미지가 같은 이유로 죽었다 — `pnpm deploy` 가 생성물을 안 가져와서
+런타임 단계에서 다시 생성해야 했다. **같은 성질이 다른 자리에서 또 나온 것이고,
+"깨끗한 환경에서 처음부터" 를 돌려 보지 않으면 계속 숨어 있는다.** CI 를 붙이는 값이 이것이다.
+
+두 번째 실패도 있었다. 타입 검사가 죽자 `if: failure()` 로 붙여 둔 로그 단계가 실행됐는데,
+서버를 띄우기 전이라 `/tmp/server.log` 가 없었고 `cat` 이 종료 코드 2로 죽었다.
+**진짜 원인 위에 엉뚱한 실패가 하나 더 쌓였다.**
+
+```yaml
+run: cat /tmp/server.log 2>/dev/null || echo "서버 로그가 없다 — 서버를 띄우기 전에 실패했다."
+```
+
 ### 실패하면 로그를 뱉는다
 
 ```yaml
