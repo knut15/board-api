@@ -1,7 +1,8 @@
-# 문서: docs/14-verification.md
+# 문서: docs/14-verification.md · docs/15-continuous-deploy.md
 #
-# push 마다 검사 43가지를 돌린다. 로컬에서 돌리는 것과 같은 스크립트다 —
-# CI 전용 검사를 따로 만들면 둘이 갈라지고, 갈라진 쪽은 아무도 안 고친다.
+# push 마다 검사 43가지를 돌리고, main 이면 배포까지 간다.
+# 로컬에서 돌리는 것과 같은 스크립트를 쓴다 — CI 전용 검사를 따로 만들면
+# 둘이 갈라지고, 갈라진 쪽은 아무도 안 고친다.
 
 name: verify
 
@@ -97,3 +98,58 @@ jobs:
         if: failure()
         run: cat /tmp/server.log 2>/dev/null || echo "서버 로그가 없다 — 서버를 띄우기 전에 실패했다."
 
+  # ---------------------------------------------------------------------------
+  # 배포. verify 가 통과해야만 돈다.
+  deploy:
+    needs: verify
+    # PR 에서는 돌지 않는다. main 에 실제로 들어온 것만 올린다.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    # 배포는 겹치면 안 된다. 앞 배포가 끝날 때까지 기다린다 —
+    # cancel-in-progress 를 켜면 마이그레이션 중간에 잘릴 수 있다.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # 토큰이 없으면 실패가 아니라 건너뛴다. 레포를 복제한 사람이
+      # 남의 배포 토큰을 가질 리 없고, 그때 CI 가 빨개질 이유도 없다.
+      - name: 배포 토큰이 있는지 본다
+        id: token
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "${RAILWAY_TOKEN:-}" ]; then
+            echo "has=false" >> "$GITHUB_OUTPUT"
+            echo "RAILWAY_TOKEN 이 없어 배포를 건너뛴다." >> "$GITHUB_STEP_SUMMARY"
+            echo "넣는 법은 docs/15-continuous-deploy.md 에 있다." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "has=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Railway CLI
+        if: steps.token.outputs.has == 'true'
+        run: npm install -g @railway/cli@5.60.0
+
+      # 서버를 먼저 올린다. 마이그레이션이 여기 붙어 있어서(preDeploy) 스키마가
+      # 먼저 맞춰져야 새 웹이 기대하는 응답이 나온다.
+      - name: server
+        if: steps.token.outputs.has == 'true'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service server --ci
+
+      - name: web
+        if: steps.token.outputs.has == 'true'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service web --ci
+
+      # 플랫폼의 헬스체크는 컨테이너가 떴는지만 본다.
+      # 전 구간이 이어졌는지는 공개 주소를 불러 봐야 안다.
+      - name: 올라간 것 확인 (읽기만 한다)
+        if: steps.token.outputs.has == 'true'
+        run: ./scripts/smoke-deployed.sh
