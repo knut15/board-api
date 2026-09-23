@@ -1,0 +1,11 @@
+{
+  "name": "board-api",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "scripts": {
+    "dev:server": "pnpm --filter board-api-server dev",
+    "dev:web": "pnpm --filter board-api-web dev",
+    "typecheck": "pnpm -r --if-present typecheck"
+  }
+}

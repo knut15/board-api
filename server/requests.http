@@ -1,0 +1,148 @@
+# 커리큘럼 3.7 — 엔드포인트 11개를 위에서 아래로 한 번씩 누른다.
+# 이 파일은 버리지 않는다. 5·6·7단계에서 회귀 검사로 계속 쓴다.
+# VS Code REST Client 또는 JetBrains HTTP Client 로 실행한다.
+#
+# 순서에 의존한다 — 1번을 눌러야 @userId 가 생기고, 5번을 눌러야 @postId 가 생긴다.
+
+@host = http://localhost:4000
+
+### 0. 살아 있나 (3.2)
+GET {{host}}/health
+
+### 1. 가입 → 201
+# @name signup
+POST {{host}}/auth/signup
+Content-Type: application/json
+
+{ "email": "kim@example.com", "password": "password123", "nickname": "kim" }
+
+### 1-b. 같은 이메일로 다시 → 409
+POST {{host}}/auth/signup
+Content-Type: application/json
+
+{ "email": "kim@example.com", "password": "password123", "nickname": "kim2" }
+
+### 1-c. 비밀번호 8자 미만 → 422
+POST {{host}}/auth/signup
+Content-Type: application/json
+
+{ "email": "short@example.com", "password": "1234", "nickname": "short" }
+
+### 1-d. password 가 숫자 → 400 (형식이 틀린 것과 값이 틀린 것의 차이)
+POST {{host}}/auth/signup
+Content-Type: application/json
+
+{ "email": "bad@example.com", "password": 12345678, "nickname": "bad" }
+
+### 2. 로그인 → 200, token 을 받는다
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "email": "kim@example.com", "password": "password123" }
+
+@userId = {{login.response.body.token}}
+
+### 2-b. 비밀번호 틀림 → 401 (없는 이메일과 같은 응답이어야 한다)
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "email": "kim@example.com", "password": "wrong-password" }
+
+### 3. 내 정보 → 200
+GET {{host}}/me
+x-user-id: {{userId}}
+
+### 3-b. 토큰 없이 → 401
+GET {{host}}/me
+
+### 5. 글 작성 → 201 + Location 헤더
+# @name createPost
+POST {{host}}/posts
+Content-Type: application/json
+x-user-id: {{userId}}
+
+{ "title": "첫 글", "body": "본문이다." }
+
+@postId = {{createPost.response.body.id}}
+
+### 5-b. 로그인 없이 글 작성 → 401
+POST {{host}}/posts
+Content-Type: application/json
+
+{ "title": "몰래 쓰기", "body": "안 된다." }
+
+### 5-c. 빈 제목 → 422
+POST {{host}}/posts
+Content-Type: application/json
+x-user-id: {{userId}}
+
+{ "title": "   ", "body": "제목이 비었다." }
+
+### 4. 글 목록 → 200, { items, pageInfo }
+GET {{host}}/posts?limit=20
+x-user-id: {{userId}}
+
+### 4-b. limit 범위 밖 → 400
+GET {{host}}/posts?limit=999
+
+### 6. 글 상세 → 200, 작성자와 댓글 첫 페이지가 함께 온다
+GET {{host}}/posts/{{postId}}
+
+### 6-b. 없는 id → 404
+GET {{host}}/posts/00000000-0000-0000-0000-000000000000
+
+### 10. 댓글 작성 → 201
+POST {{host}}/posts/{{postId}}/comments
+Content-Type: application/json
+x-user-id: {{userId}}
+
+{ "body": "첫 댓글이다." }
+
+### 9. 댓글 목록 → 200
+GET {{host}}/posts/{{postId}}/comments
+
+### 7. 글 수정 → 200 (PATCH 는 보낸 필드만 바꾼다)
+PATCH {{host}}/posts/{{postId}}
+Content-Type: application/json
+x-user-id: {{userId}}
+
+{ "title": "제목만 고친다" }
+
+### ---- 여기서부터 남의 계정이 필요하다 ----
+
+### 가입 2 → 201
+# @name signup2
+POST {{host}}/auth/signup
+Content-Type: application/json
+
+{ "email": "lee@example.com", "password": "password123", "nickname": "lee" }
+
+@otherId = {{signup2.response.body.id}}
+
+### 7-b. 남의 글 수정 → 403 (완성 시나리오 5번)
+PATCH {{host}}/posts/{{postId}}
+Content-Type: application/json
+x-user-id: {{otherId}}
+
+{ "title": "남의 글을 고친다" }
+
+### 8-b. 남의 글 삭제 → 403
+DELETE {{host}}/posts/{{postId}}
+x-user-id: {{otherId}}
+
+### 11. 댓글 삭제 → 204
+# 댓글 id 는 9번 응답의 items[0].id 를 복사해 넣는다.
+DELETE {{host}}/comments/PASTE_COMMENT_ID_HERE
+x-user-id: {{userId}}
+
+### 8. 글 삭제 → 204
+DELETE {{host}}/posts/{{postId}}
+x-user-id: {{userId}}
+
+### 8-c. 같은 글을 또 삭제 → 404 (멱등성 결정, 02-api.md 2.5)
+DELETE {{host}}/posts/{{postId}}
+x-user-id: {{userId}}
+
+### 없는 경로 → 404 ROUTE_NOT_FOUND
+GET {{host}}/nope

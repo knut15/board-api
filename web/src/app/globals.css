@@ -1,0 +1,58 @@
+/* 문서: docs/code/web-presentation.md */
+@import "tailwindcss";
+@import "../presentation/styles/tokens.css";
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-seal: var(--seal);
+  --color-seal-soft: var(--seal-soft);
+  --font-serif: var(--serif);
+  --font-sans: var(--sans);
+
+  /* 글자 크기. text-[var(--x)] 는 Tailwind 가 "색" 으로 해석해 조용히 버린다.
+     --text-* 네임스페이스에 등록해야 text-title 같은 진짜 크기 유틸리티가 나온다. */
+  --text-meta: var(--t-meta);
+  --text-ui: var(--t-ui);
+  --text-read: var(--t-read);
+  --text-title: var(--t-title);
+  --text-display: var(--t-display);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--body);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 포커스는 인주색으로. 키보드로 쓰는 사람이 지금 어디 있는지 항상 보여야 한다. */
+:focus-visible {
+  outline: 2px solid var(--seal);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+::selection {
+  background: var(--seal-soft);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

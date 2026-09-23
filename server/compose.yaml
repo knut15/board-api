@@ -1,0 +1,27 @@
+# 커리큘럼 4.1 — DB 를 노트북에 설치하지 않고 컨테이너로 띄운다.
+#
+#   docker-compose up -d     띄운다
+#   docker-compose down      멈춘다 (데이터는 남는다)
+#   docker-compose down -v   볼륨까지 지운다 (데이터가 사라진다)
+#
+# 마지막 것을 한 번 해 보고 데이터가 같이 사라지는 것을 확인한다.
+# 그게 "볼륨이 데이터를 들고 있다" 는 말의 뜻이다.
+services:
+  db:
+    image: postgres:16-alpine
+    # 호스트 5432 를 컨테이너 5432 에 잇는다. 노트북에 Postgres 가 따로 떠 있으면 여기서 충돌한다.
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_USER: board
+      POSTGRES_PASSWORD: board
+      POSTGRES_DB: board
+    # 이름 붙은 볼륨. 컨테이너를 지워도 이 볼륨이 남아 데이터가 유지된다.
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U board -d board"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

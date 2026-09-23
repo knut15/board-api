@@ -1,0 +1,13 @@
+# 빌드 컨텍스트에서 뺀다. 이미지 크기와 빌드 시간이 둘 다 줄고,
+# .env 가 실수로 이미지에 들어가는 일도 막는다.
+**/node_modules
+**/dist
+**/.next
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.omc
+docs
+**/*.md
+!server/prisma/**
